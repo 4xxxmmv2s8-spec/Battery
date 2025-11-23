@@ -313,28 +313,24 @@
     <div class="card">
       <h2>הוספת רשומה</h2>
       <div class="field">
-        <label>מספר סוללה</label>
+        <label>מספר סוללה (חובה)</label>
         <input id="battery-number" type="text" />
       </div>
       <div class="field">
-        <label>טמפ' התחלה (°C)</label>
+        <label>טמפ' התחלה (°C) (חובה)</label>
         <input id="start-temp" type="number" step="0.1" />
       </div>
       <div class="field">
-        <label>שעת תחילת טעינה (לא חובה, HH:MM)</label>
+        <label>שעת תחילת טעינה (HH:MM, חובה)</label>
         <input id="start-time" type="text" placeholder="לדוגמה 10:30" />
       </div>
       <div class="field">
-        <label>טמפ' אחרי 2ש (לא חובה)</label>
+        <label>טמפ' אחרי 2ש (°C) (חובה)</label>
         <input id="temp-after" type="number" step="0.1" />
       </div>
       <div class="field">
-        <label>שעת בדיקה שנייה (לא חובה)</label>
+        <label>שעת בדיקה שנייה (HH:MM, חובה)</label>
         <input id="time-after" type="text" placeholder="לדוגמה 12:30" />
-      </div>
-      <div class="field">
-        <label>חתימת טכנאי / שם טכנאי</label>
-        <input id="tech-sign" type="text" placeholder="לדוגמה: ראובן כהן" />
       </div>
 
       <div class="buttons-row">
@@ -409,7 +405,6 @@
     const startTimeInput = document.getElementById('start-time');
     const tempAfterInput = document.getElementById('temp-after');
     const timeAfterInput = document.getElementById('time-after');
-    const techSignInput = document.getElementById('tech-sign');
 
     const addRecordBtn = document.getElementById('add-record-btn');
     const reminderBtn = document.getElementById('reminder-btn');
@@ -509,48 +504,51 @@
       return allRecords.filter(r => String(r.battery_number) === currentFilter);
     }
 
+    // הוספת רשומה עם חתימת טכנאי קופצת וכל השדות חובה
     addRecordBtn.addEventListener('click', () => {
       const b = batteryNumberInput.value.trim();
       const t1Str = startTempInput.value.trim();
       const startTime = startTimeInput.value.trim();
       const t2Str = tempAfterInput.value.trim();
       const time2 = timeAfterInput.value.trim();
-      const techSig = techSignInput.value.trim();
 
-      if (!b || !t1Str) {
-        alert("חובה למלא מספר סוללה וטמפ' התחלה");
+      if (!b || !t1Str || !startTime || !t2Str || !time2) {
+        alert("כל השדות בטופס הם חובה (כולל שעות וטמפ' אחרי 2ש).");
         return;
       }
 
       const t1 = parseFloat(t1Str);
       if (isNaN(t1)) {
-        alert("טמפ' התחלה לא מספר");
+        alert("טמפ' התחלה חייבת להיות מספר.");
         return;
       }
 
-      let t2 = '';
-      if (t2Str) {
-        const val = parseFloat(t2Str);
-        if (isNaN(val)) {
-          alert("טמפ' אחרי 2ש לא מספר");
-          return;
-        }
-        t2 = val.toFixed(1);
-        if (val > 40) {
-          alert('אזהרה: טמפרטורה אחרי 2 שעות מעל 40°C! בדוק מיד את הסוללה.');
-        }
+      const val2 = parseFloat(t2Str);
+      if (isNaN(val2)) {
+        alert("טמפ' אחרי 2ש חייבת להיות מספר.");
+        return;
+      }
+      const t2 = val2.toFixed(1);
+      if (val2 > 40) {
+        alert('אזהרה: טמפרטורה אחרי 2 שעות מעל 40°C! בדוק מיד את הסוללה.');
       }
 
-      let startDt;
-      if (startTime) {
-        const dateStr = new Date().toLocaleDateString('he-IL');
-        startDt = `${dateStr} ${startTime}`;
-      } else {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('he-IL');
-        const timeStr = now.toTimeString().substring(0,5);
-        startDt = `${dateStr} ${timeStr}`;
+      // חתימת טכנאי – חלונית קופצת
+      const techSigRaw = window.prompt("הכנס את חתימת הטכנאי / שם הטכנאי:");
+      if (techSigRaw === null) {
+        // המשתמש לחץ Cancel
+        alert("הוספת הרשומה בוטלה (חובה חתימת טכנאי).");
+        return;
       }
+      const techSig = techSigRaw.trim();
+      if (!techSig) {
+        alert("חובה למלא חתימת טכנאי.");
+        return;
+      }
+
+      // תאריך מלא + שעת התחלה מהטופס
+      const dateStr = new Date().toLocaleDateString('he-IL');
+      const startDt = `${dateStr} ${startTime}`;
 
       const rec = {
         battery_number: b,
@@ -573,7 +571,6 @@
       startTimeInput.value = '';
       tempAfterInput.value = '';
       timeAfterInput.value = '';
-      techSignInput.value = '';
     });
 
     exportCsvBtn.addEventListener('click', () => {
