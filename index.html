@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="תיעוד סוללות" />
 
-  <!-- אייקונים (בתיקיית icons) -->
+  <!-- אייקונים -->
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
@@ -211,8 +211,6 @@
       flex: 1;
     }
 
-    /* מסך סינון מלא (אוברליי) */
-
     .filter-overlay {
       position: fixed;
       inset: 0;
@@ -334,6 +332,10 @@
         <label>שעת בדיקה שנייה (לא חובה)</label>
         <input id="time-after" type="text" placeholder="לדוגמה 12:30" />
       </div>
+      <div class="field">
+        <label>חתימת טכנאי / שם טכנאי</label>
+        <input id="tech-sign" type="text" placeholder="לדוגמה: ראובן כהן" />
+      </div>
 
       <div class="buttons-row">
         <button class="primary" id="add-record-btn">➕ הוסף רשומה</button>
@@ -364,6 +366,7 @@
             <th>תאריך + שעת התחלה</th>
             <th>טמפ' אחרי 2ש</th>
             <th>שעת בדיקה שנייה</th>
+            <th>חתימת טכנאי</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -384,7 +387,6 @@
   </div>
 
   <script>
-    // ------- נתונים וזיכרון בדפדפן --------
     const STORAGE_KEY = 'battery_records_v1';
 
     function loadRecords() {
@@ -402,12 +404,12 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }
 
-    // ------- אלמנטים DOM --------
     const batteryNumberInput = document.getElementById('battery-number');
     const startTempInput = document.getElementById('start-temp');
     const startTimeInput = document.getElementById('start-time');
     const tempAfterInput = document.getElementById('temp-after');
     const timeAfterInput = document.getElementById('time-after');
+    const techSignInput = document.getElementById('tech-sign');
 
     const addRecordBtn = document.getElementById('add-record-btn');
     const reminderBtn = document.getElementById('reminder-btn');
@@ -427,7 +429,6 @@
     let allRecords = loadRecords();
     let currentFilter = 'הכל';
 
-    // ------- רינדור טבלה --------
     function renderTable() {
       tableBody.innerHTML = '';
       const recs = getFilteredRecords();
@@ -446,12 +447,12 @@
           <td>${rec.start_datetime || ''}</td>
           <td>${rec.temp_after ?? ''}</td>
           <td>${rec.time_after || ''}</td>
+          <td>${rec.tech_signature || ''}</td>
         `;
         tableBody.appendChild(tr);
       });
     }
 
-    // ------- סטטיסטיקות --------
     function updateStats() {
       const recs = getFilteredRecords();
       if (!recs.length) {
@@ -508,13 +509,13 @@
       return allRecords.filter(r => String(r.battery_number) === currentFilter);
     }
 
-    // ------- הוספת רשומה --------
     addRecordBtn.addEventListener('click', () => {
       const b = batteryNumberInput.value.trim();
       const t1Str = startTempInput.value.trim();
       const startTime = startTimeInput.value.trim();
       const t2Str = tempAfterInput.value.trim();
       const time2 = timeAfterInput.value.trim();
+      const techSig = techSignInput.value.trim();
 
       if (!b || !t1Str) {
         alert("חובה למלא מספר סוללה וטמפ' התחלה");
@@ -557,7 +558,8 @@
         start_datetime: startDt,
         start_time: startTime,
         temp_after: t2,
-        time_after: time2
+        time_after: time2,
+        tech_signature: techSig
       };
 
       allRecords.push(rec);
@@ -571,9 +573,9 @@
       startTimeInput.value = '';
       tempAfterInput.value = '';
       timeAfterInput.value = '';
+      techSignInput.value = '';
     });
 
-    // ------- ייצוא CSV --------
     exportCsvBtn.addEventListener('click', () => {
       if (!allRecords.length) {
         alert('אין נתונים ליצוא');
@@ -586,7 +588,8 @@
         'Start DateTime',
         'Charge Start Time',
         'Temp After 2h (C)',
-        'Second Check Time'
+        'Second Check Time',
+        'Technician Signature'
       ]);
       getFilteredRecords().forEach(r => {
         rows.push([
@@ -595,7 +598,8 @@
           r.start_datetime || '',
           r.start_time || '',
           r.temp_after || '',
-          r.time_after || ''
+          r.time_after || '',
+          r.tech_signature || ''
         ]);
       });
 
@@ -613,7 +617,6 @@
       URL.revokeObjectURL(url);
     });
 
-    // ------- דוח טקסט --------
     exportReportBtn.addEventListener('click', () => {
       const recs = getFilteredRecords();
       if (!recs.length) {
@@ -627,9 +630,9 @@
       content += '----------------------------------------\n\n';
       content += statsText + '\n\n';
       content += 'רשומות:\n';
-      content += 'מספר\tהתחלה[°C]\tתאריך-שעה\tשעת התחלה\tאחרי 2ש[°C]\tשעה 2\n';
+      content += 'מספר\tהתחלה[°C]\tתאריך-שעה\tשעת התחלה\tאחרי 2ש[°C]\tשעה 2\tחתימת טכנאי\n';
       recs.forEach(r => {
-        content += `${r.battery_number}\t${r.start_temp}\t${r.start_datetime}\t${r.start_time || ''}\t${r.temp_after || ''}\t${r.time_after || ''}\n`;
+        content += `${r.battery_number}\t${r.start_temp}\t${r.start_datetime}\t${r.start_time || ''}\t${r.temp_after || ''}\t${r.time_after || ''}\t${r.tech_signature || ''}\n`;
       });
 
       const blob = new Blob([content], {type: 'text/plain;charset=utf-8;'});
@@ -643,7 +646,6 @@
       URL.revokeObjectURL(url);
     });
 
-    // ------- תזכורות (להסתיר אם אין תמיכה) --------
     if (!('Notification' in window)) {
       reminderBtn.style.display = 'none';
     }
@@ -670,7 +672,6 @@
       }, 60 * 60 * 1000);
     });
 
-    // ------- נקה נתונים --------
     clearDataBtn.addEventListener('click', () => {
       if (!confirm('למחוק את כל הנתונים מהדפדפן?')) return;
       allRecords = [];
@@ -680,7 +681,6 @@
       updateFilterButtonLabel();
     });
 
-    // ------- מסך סינון מלא --------
     function updateFilterButtonLabel() {
       filterOpenBtn.textContent = `סינון: ${currentFilter}`;
     }
@@ -733,12 +733,10 @@
       if (e.target === filterOverlay) closeFilterOverlay();
     });
 
-    // ------- אתחול --------
     renderTable();
     updateStats();
     updateFilterButtonLabel();
 
-    // ------- רישום Service Worker (PWA) --------
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./service-worker.js')
