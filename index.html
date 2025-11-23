@@ -536,7 +536,6 @@
       // חתימת טכנאי – חלונית קופצת
       const techSigRaw = window.prompt("הכנס את חתימת הטכנאי / שם הטכנאי:");
       if (techSigRaw === null) {
-        // המשתמש לחץ Cancel
         alert("הוספת הרשומה בוטלה (חובה חתימת טכנאי).");
         return;
       }
@@ -573,6 +572,7 @@
       timeAfterInput.value = '';
     });
 
+    // ---- ייצוא CSV עם BOM בשביל אקסל ----
     exportCsvBtn.addEventListener('click', () => {
       if (!allRecords.length) {
         alert('אין נתונים ליצוא');
@@ -603,7 +603,11 @@
       const csv = rows
         .map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(','))
         .join('\n');
-      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+
+      // BOM כדי שאקסל יזהה נכון UTF-8
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csv], {type: 'text/csv;charset=utf-8;'});
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
